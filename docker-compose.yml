@@ -3,9 +3,9 @@ services:
     image: postgres:16
     container_name: bigdata_postgres
     environment:
-      POSTGRES_DB: pet_shop
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-pet_shop}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     healthcheck:
@@ -16,7 +16,7 @@ services:
       start_period: 10s
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d
+      - ./db/postgres/init:/docker-entrypoint-initdb.d
       - "./исходные данные:/data/mock_data:ro"
     networks:
       - bigdata
@@ -25,8 +25,8 @@ services:
     image: clickhouse/clickhouse-server:24.8
     container_name: bigdata_clickhouse
     environment:
-      CLICKHOUSE_SKIP_USER_SETUP: "1"
-      CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: "1"
+      CLICKHOUSE_SKIP_USER_SETUP: "${CLICKHOUSE_SKIP_USER_SETUP:-1}"
+      CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS: "${CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS:-1}"
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -42,7 +42,7 @@ services:
         hard: 262144
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      - ./clickhouse/init:/docker-entrypoint-initdb.d
+      - ./db/clickhouse/init:/docker-entrypoint-initdb.d
     networks:
       - bigdata
 
@@ -56,15 +56,16 @@ services:
       clickhouse:
         condition: service_healthy
     environment:
-      POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/pet_shop
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      CLICKHOUSE_JDBC_URL: jdbc:clickhouse://clickhouse:8123/analytics
-      CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: ""
-      SPARK_MASTER_URL: local[*]
-      SPARK_TIMEZONE: UTC
-      SPARK_LOG_LEVEL: WARN
+      POSTGRES_JDBC_URL: ${POSTGRES_JDBC_URL:-jdbc:postgresql://postgres:5432/pet_shop}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      CLICKHOUSE_JDBC_URL: ${CLICKHOUSE_JDBC_URL:-jdbc:clickhouse://clickhouse:8123/analytics}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD:-}"
+      SPARK_MASTER_URL: ${SPARK_MASTER_URL:-local[*]}
+      SPARK_TIMEZONE: ${SPARK_TIMEZONE:-UTC}
+      SPARK_LOG_LEVEL: ${SPARK_LOG_LEVEL:-WARN}
+      JDBC_WRITE_PARTITIONS: ${JDBC_WRITE_PARTITIONS:-1}
     command: ["sleep", "infinity"]
     volumes:
       - ./:/workspace/project
